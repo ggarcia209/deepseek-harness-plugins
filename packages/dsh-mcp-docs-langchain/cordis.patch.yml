@@ -1,0 +1,7 @@
+- insert:
+    - id: mcp-docs-langchain
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: docs-langchain
+        transport: streamable-http
+        url: https://docs.langchain.com/mcp

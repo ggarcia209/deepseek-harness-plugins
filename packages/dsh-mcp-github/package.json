@@ -1,0 +1,8 @@
+{
+  "name": "dsh-mcp-github",
+  "version": "0.1.0",
+  "description": "DSH bundle: GitHub MCP server from the github/github-mcp-server Docker image",
+  "type": "module",
+  "files": ["cordis.patch.yml"],
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
+}

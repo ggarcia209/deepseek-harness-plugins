@@ -1,0 +1,8 @@
+- insert:
+    - id: mcp-sequential-thinking
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: sequential-thinking
+        transport: stdio
+        command: npx
+        args: ['-y', '@modelcontextprotocol/server-sequential-thinking']

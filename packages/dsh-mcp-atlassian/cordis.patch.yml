@@ -1,0 +1,8 @@
+- insert:
+    - id: mcp-atlassian
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: atlassian
+        transport: stdio
+        command: npx
+        args: ['-y', 'mcp-remote', 'https://mcp.atlassian.com/v1/sse']

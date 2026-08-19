@@ -1,0 +1,8 @@
+{
+  "name": "dsh-mcp-sequential-thinking",
+  "version": "0.1.0",
+  "description": "DSH bundle: Sequential Thinking MCP server",
+  "type": "module",
+  "files": ["cordis.patch.yml"],
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
+}
