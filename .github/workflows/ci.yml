@@ -1,0 +1,90 @@
+# ---------------------------------------------------------------------------
+# Release and publish the dsh-mcp bundles as DeepSeek Harness plugins.
+#
+# 1. Semantic Release (runs on push/merge to main)
+#    Creates a GitHub Release with a semver tag derived from conventional commits.
+# 2. Publish (runs after the release)
+#    Applies the semantic-release version to every bundle under packages/ and
+#    publishes each to the npm registry, so each can be installed in any profile
+#    with `dsh plugin --profile <name> add <package>`.
+# ---------------------------------------------------------------------------
+
+name: Release and Publish
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Semantic Release (runs only on push/merge to main)
+  # Creates a GitHub Release with a semver tag derived from conventional commits.
+  # The root package is private, so @semantic-release/npm skips publishing it
+  # here; the version it computes is consumed by the publish job below.
+  # ---------------------------------------------------------------------------
+  release:
+    name: Semantic Release
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      new_release_published: ${{ steps.semantic.outputs.new_release_published }}
+      new_release_version: ${{ steps.semantic.outputs.new_release_version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.12"
+
+      - name: Semantic Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ---------------------------------------------------------------------------
+  # Publish to npm (runs after release)
+  # Sets every bundle's version to the semantic-release version and publishes
+  # the packages to the npm registry. No build step: the bundles are
+  # configuration-only and ship cordis.patch.yml via their `files` field.
+  # ---------------------------------------------------------------------------
+  publish:
+    name: Publish dsh-mcp bundles to npm
+    needs: release
+    if: needs.release.outputs.new_release_published == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.12"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@10.28.2 --activate
+
+      - name: Install workspace
+        run: pnpm install
+
+      - name: Apply release version to all bundles
+        run: pnpm -r exec npm version ${{ needs.release.outputs.new_release_version }} --no-git-tag-version
+
+      - name: Publish bundles to npm
+        run: pnpm -r publish --no-git-checks --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
