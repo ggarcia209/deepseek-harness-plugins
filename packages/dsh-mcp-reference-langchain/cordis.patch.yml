@@ -1,0 +1,7 @@
+- insert:
+    - id: mcp-reference-langchain
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: reference-langchain
+        transport: streamable-http
+        url: https://reference.langchain.com/mcp
