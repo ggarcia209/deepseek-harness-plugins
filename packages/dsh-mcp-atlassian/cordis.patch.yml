@@ -5,4 +5,4 @@
         serverName: atlassian
         transport: stdio
         command: npx
-        args: ['-y', 'mcp-remote', 'https://mcp.atlassian.com/v1/sse']
+        args: ['-y', 'mcp-remote', 'https://mcp.atlassian.com/v1/mcp']
