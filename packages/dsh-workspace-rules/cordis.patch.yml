@@ -1,0 +1,10 @@
+# Host-plane row: one instance serves every agent/session, so workspace rules
+# load for any preset. Per-session scoping comes from `agent.session.header.cwd`.
+- insert:
+    - id: workspace-rules
+      name: dsh-workspace-rules
+      config:
+        maxBytes: 16384
+        # defaultLocation: .dsh/rules   (relative to the repo root)
+        # envVar: RULE_LOCATION_DIR
+        # repoConfigFile: .dsh/config.yml
