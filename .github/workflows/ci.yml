@@ -3,6 +3,11 @@
 #
 # 1. Semantic Release (runs on push/merge to main)
 #    Creates a GitHub Release with a semver tag derived from conventional commits.
+#    The version is computed from the merge commit's title, so PRs must be
+#    squash-merged with a conventional title (feat:/fix:/perf:/...). The
+#    validate-pr job enforces this on every pull request; a non-conventional
+#    merge title makes semantic-release skip the release entirely and the
+#    publish job with it.
 # 2. Publish (runs after the release)
 #    Applies the semantic-release version to every bundle under packages/ and
 #    publishes each to the npm registry, so each can be installed in any profile
@@ -14,12 +19,28 @@ name: Release and Publish
 on:
   push:
     branches: [main]
+  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # Conventional commit check (runs on pull requests)
+  # Ensures the title that will be squash-merged onto main is a conventional
+  # commit, so semantic-release can compute the next version on that merge.
+  # ---------------------------------------------------------------------------
+  validate-pr:
+    name: Validate conventional PR title
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   # ---------------------------------------------------------------------------
   # Semantic Release (runs only on push/merge to main)
   # Creates a GitHub Release with a semver tag derived from conventional commits.
@@ -87,4 +108,6 @@ jobs:
       - name: Publish bundles to npm
         run: pnpm -r publish --no-git-checks --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # npmjs.org access token with publish rights (secrets.NPM_TOKEN).
+          # GITHUB_TOKEN cannot authenticate to registry.npmjs.org.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
