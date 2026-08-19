@@ -1,0 +1,13 @@
+- insert:
+    - id: mcp-grafana
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: grafana
+        transport: streamable-http
+        url: https://mcp.grafana.com/mcp
+        headers:
+          # Grafana routes the MCP session to your instance via this header.
+          # Read from the environment at load time, like the GitHub bundle's
+          # GITHUB_PERSONAL_ACCESS_TOKEN. The row fails to load without it
+          # (the mcp-client headers schema rejects a missing value).
+          X-Grafana-URL: !!js process.env.GRAFANA_URL

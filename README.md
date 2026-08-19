@@ -4,12 +4,13 @@ Out-of-tree plugin bundles for [DeepSeek Harness](https://github.com/deepseek-ai
 
 ## MCP server bundles
 
-Five installable bundles, one per MCP server. Each declares a single `@deepseek-ai/dsh-mcp-client` row; the client ships with the `dsh` CLI, so these bundles carry configuration only.
+Six installable bundles, one per MCP server. Each declares a single `@deepseek-ai/dsh-mcp-client` row; the client ships with the `dsh` CLI, so these bundles carry configuration only.
 
 | Bundle | Package | Server | Transport |
 |---|---|---|---|
 | [`packages/dsh-mcp-atlassian`](packages/dsh-mcp-atlassian) | `dsh-mcp-atlassian` | Atlassian (via `mcp-remote` SSE bridge) | stdio |
 | [`packages/dsh-mcp-github`](packages/dsh-mcp-github) | `dsh-mcp-github` | GitHub (`github/github-mcp-server` Docker image) | stdio |
+| [`packages/dsh-mcp-grafana`](packages/dsh-mcp-grafana) | `dsh-mcp-grafana` | Grafana (`mcp.grafana.com` MCP endpoint) | streamable-http |
 | [`packages/dsh-mcp-sequential-thinking`](packages/dsh-mcp-sequential-thinking) | `dsh-mcp-sequential-thinking` | Sequential Thinking | stdio |
 | [`packages/dsh-mcp-docs-langchain`](packages/dsh-mcp-docs-langchain) | `dsh-mcp-docs-langchain` | LangChain Docs | streamable-http |
 | [`packages/dsh-mcp-reference-langchain`](packages/dsh-mcp-reference-langchain) | `dsh-mcp-reference-langchain` | LangChain Reference | streamable-http |
@@ -45,7 +46,7 @@ dsh --profile web --dump-config                     # shows the inserted mcp row
 dsh --profile web                                   # boot; the model sees mcp__<serverName>__<tool> tools
 ```
 
-The stdio bundles need `npx`/Docker and network access at runtime; the GitHub bundle also needs `GITHUB_PERSONAL_ACCESS_TOKEN` (see [Secrets](#secrets)). Remove a bundle with `dsh plugin --profile web remove dsh-mcp-atlassian`, which removes both the dependency and its layer.
+The stdio bundles need `npx`/Docker and network access at runtime; the GitHub bundle needs `GITHUB_PERSONAL_ACCESS_TOKEN` and the Grafana bundle needs `GRAFANA_URL` (see [Secrets](#secrets)). Remove a bundle with `dsh plugin --profile web remove dsh-mcp-atlassian`, which removes both the dependency and its layer.
 
 Each bundle is a package in a monorepo, not the repository root, so a single `dsh plugin add github:<you>/deepseek-harness-plugins` installs only this root (which ships no `dsh.bundle` layer). Install individual packages by clone + path spec, tarball, or npm name.
 
@@ -91,4 +92,9 @@ Before publishing, test the exact artifact locally: `pnpm pack` (see [Install fr
 
 ## Secrets
 
-No secret is stored in this repository. The GitHub bundle reads `GITHUB_PERSONAL_ACCESS_TOKEN` from the environment at load time (`!!js process.env.GITHUB_PERSONAL_ACCESS_TOKEN`); export it (or put it in `.env`) before booting. Never commit a token.
+No secret is stored in this repository. Two bundles read values from the environment at load time via `!!js`:
+
+- The GitHub bundle reads `GITHUB_PERSONAL_ACCESS_TOKEN` (`!!js process.env.GITHUB_PERSONAL_ACCESS_TOKEN`).
+- The Grafana bundle reads `GRAFANA_URL` — your Grafana Cloud stack URL, e.g. `https://<your-stack>.grafana.net` — and sends it as the `X-Grafana-URL` header (`!!js process.env.GRAFANA_URL`).
+
+Export them (or put them in `.env`) before booting. Never commit a token.

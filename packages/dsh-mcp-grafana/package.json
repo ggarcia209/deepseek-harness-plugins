@@ -1,0 +1,8 @@
+{
+  "name": "dsh-mcp-grafana",
+  "version": "0.1.0",
+  "description": "DSH bundle: Grafana MCP server over Streamable HTTP",
+  "type": "module",
+  "files": ["cordis.patch.yml"],
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
+}
