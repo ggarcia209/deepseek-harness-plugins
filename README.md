@@ -14,24 +14,80 @@ Five installable bundles, one per MCP server. Each declares a single `@deepseek-
 | [`packages/dsh-mcp-docs-langchain`](packages/dsh-mcp-docs-langchain) | `dsh-mcp-docs-langchain` | LangChain Docs | streamable-http |
 | [`packages/dsh-mcp-reference-langchain`](packages/dsh-mcp-reference-langchain) | `dsh-mcp-reference-langchain` | LangChain Reference | streamable-http |
 
-## Install
+## How to use
 
-Each bundle installs into a profile by itself. From this checkout, install one with a local path spec (anchored to the invoking directory):
+Install a bundle into a profile with `dsh plugin --profile <name> add <spec>`. The command initializes the profile when missing, forwards to pnpm inside the profile directory, and appends the bundle to the profile's layer stack when the package declares `dsh.bundle` (every bundle here does). Relative path specs are anchored to the directory you run the command from.
+
+### 1. Install from this checkout
 
 ```sh
+# from the repository root:
 dsh plugin --profile web add ./packages/dsh-mcp-atlassian
 ```
 
-Or package it and install the tarball, or install by npm name after publishing:
+### 2. Install from a tarball
 
 ```sh
-pnpm --filter dsh-mcp-atlassian pack
+cd packages/dsh-mcp-atlassian && pnpm pack          # -> dsh-mcp-atlassian-0.1.0.tgz in that directory
 dsh plugin --profile web add ./packages/dsh-mcp-atlassian/dsh-mcp-atlassian-0.1.0.tgz
-# or, after `pnpm publish`:
-dsh plugin --profile web add dsh-mcp-atlassian
 ```
 
-Each bundle is a package in a monorepo, not the repository root, so a single `dsh plugin add github:ggarcia209/deepseek-harness-plugins` installs only this root (which ships no `dsh.bundle` layer). Install individual packages by clone + path spec, tarball, or npm name.
+### 3. Install from npm
+
+```sh
+dsh plugin --profile web add dsh-mcp-atlassian      # after publishing (see below)
+```
+
+### Verify and use
+
+```sh
+dsh --profile web --dump-config                     # shows the inserted mcp row
+dsh --profile web                                   # boot; the model sees mcp__<serverName>__<tool> tools
+```
+
+The stdio bundles need `npx`/Docker and network access at runtime; the GitHub bundle also needs `GITHUB_PERSONAL_ACCESS_TOKEN` (see [Secrets](#secrets)). Remove a bundle with `dsh plugin --profile web remove dsh-mcp-atlassian`, which removes both the dependency and its layer.
+
+Each bundle is a package in a monorepo, not the repository root, so a single `dsh plugin add github:<you>/deepseek-harness-plugins` installs only this root (which ships no `dsh.bundle` layer). Install individual packages by clone + path spec, tarball, or npm name.
+
+## Publishing via pnpm / npm
+
+Each bundle is an independent npm package, so publish them one at a time to the npm registry. The published tarball contains only `cordis.patch.yml`, `package.json`, and `README.md` (the `files` field) — no build step is required for these configuration-only bundles.
+
+Prerequisites:
+
+- an npm account (`npm login`) with publish rights for the package name you choose
+- `pnpm` on PATH
+
+Per package:
+
+1. (Recommended) Rename to a scoped name you own and make the scope public, e.g. in `packages/dsh-mcp-atlassian/package.json`:
+
+   ```json
+   {
+     "name": "@your-scope/dsh-mcp-atlassian",
+     "publishConfig": { "access": "public" }
+   }
+   ```
+
+   Unscoped names publish public by default; scoped packages default to restricted and need `publishConfig.access`.
+
+2. Bump `version` as needed.
+
+3. Publish from the repository root, one package per command:
+
+   ```sh
+   pnpm --filter dsh-mcp-atlassian publish
+   # or, after renaming:
+   pnpm --filter @your-scope/dsh-mcp-atlassian publish
+   ```
+
+4. Install the published package in any profile:
+
+   ```sh
+   dsh plugin --profile web add @your-scope/dsh-mcp-atlassian
+   ```
+
+Before publishing, test the exact artifact locally: `pnpm pack` (see [Install from a tarball](#2-install-from-a-tarball)) and confirm the bundle loads with `dsh --profile web --dump-config`.
 
 ## Secrets
 
